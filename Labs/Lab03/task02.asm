@@ -14,28 +14,27 @@ main PROC
     test bl, 080h       ; перевіряємо, що bl - від'ємне число
     jnz reverseb        ; якщо від'ємне - додаємо біти у bh
 
-    jmp skip
+    jmp skip            ; число додантнє - пропустити перетворення
 
 reverseb:
     mov bh, 0FFh        ; додаємо значення у bh, щоб bx було від'ємним
 
 skip:
+    add ax, bx          ; додаємо 2 числа
 
-    add ax, bx
+    test ax,  08000h    ; перевіряємо на від'ємність
+    jnz reversea        ; число від'ємне - перетворити на додатнє
 
-    test ax,  08000h
-    jnz reversea
-
-    jmp end
+    jmp end             ; в іншому випадку - пропускаємо перетворення
 
 reversea:
-    mov cx, 0FFFFh
-    sub cx, ax
-    mov ax, cx
+    mov cx, 0FFFFh      ; задаємо максимальне значення регістру cx
+    sub cx, ax          ; віднімаємо від cx, ax
+    mov ax, cx          ; перезаписуємо значення у ax
+
+    inc ax              ; додаємо 1, щоб отримати правильний результат
 
 end:
-    inc ax
-
     mov ax, 4c00h       ;завершуємо програму
     int 21h             ;завершуємо програму
 main ENDP
