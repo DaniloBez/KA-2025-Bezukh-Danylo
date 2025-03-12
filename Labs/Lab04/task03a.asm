@@ -3,6 +3,7 @@
 .code
 
 difference PROC
+    pop cx
     pop bx
     pop ax
 
@@ -19,6 +20,7 @@ ax_Bigger:
 bx_Bigger:
     sub bx, ax
     push bx
+    push cx
     jmp return
 
 return:
