@@ -4,7 +4,7 @@ import java.nio.file.Paths;
 
 import static java.lang.System.out;
 
-public class Main {
+public class main {
     public static void main(String[] args) {
         int MAX_VALUE = 32767;
 
@@ -83,6 +83,10 @@ public class Main {
                     ints[j] = temp;
                 }
             }
+        }
+
+        for(int i = 0; i < size; i++){
+            out.print(ints[i] + " ");
         }
 
         if(size % 2 != 0)
