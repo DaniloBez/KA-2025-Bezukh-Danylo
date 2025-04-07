@@ -2,3 +2,8 @@ Project/MAIN.EXE
 Project/MAIN.MAP
 Project/MAIN.OBJ
 Project/TDCONFIG.TD
+RESULT.TXT
+*.ACT
+Project/PROJ.MAP
+Project/PROJ.OBJ
+Project/PROJ.EXE

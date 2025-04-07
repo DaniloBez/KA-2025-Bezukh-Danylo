@@ -39,7 +39,6 @@ outputNewLine PROC              ; На нову стрічку
     mov ah, 02h
     int 21h
     mov dl, 0ah   
-    mov ah, 02h
     int 21h
     ret
 outputNewLine ENDP
@@ -93,24 +92,10 @@ noOverflow:
     ret
 parseNumber ENDP
 
-multiplyByTwo PROC              ; множимо bx на 2 (для індексів, або ділення)
-    push ax
-    push dx
-    xor dx, dx
-
-    mov ax, 2d
-    mul bx
-    mov bx, ax
-
-    pop dx
-    pop ax
-    ret
-multiplyByTwo ENDP
-
 positiveNumberProcessor PROC    ; зберігаємо число, збільшуємо розмір на 1
     mov bx, numElements
 
-    call multiplyByTwo
+    shl bx, 1
 
     mov [numbersArray + bx], cx
     mov bx, numElements
@@ -193,8 +178,6 @@ processMinus:                   ; якщо символ `-` -> запам'ято
 continueReading:
     or ax, ax
     jnz readNext                ; якщо ще не кінець файлу - продовжуємо читати
- 
-    call outputNewLine          ; нова стрічка
 
     pop dx
     pop cx
@@ -310,48 +293,6 @@ exitRemainder:
     ret
 outputRemainder ENDP
 
-divide32 PROC                   ; Ділення 32 бітового числа на 16 бітне
-    push cx
-    xor cx, cx
-    mov [isNegative], 0d
-
-    test dx, dx 
-    jns divideLoop
-    mov [isNegative], 1d
-    neg dx
-    dec dx
-    neg ax
-
-divideLoop:                     ; Віднімаємо поки число (dx:ax) > дільника (bx)
-    cmp dx, 0
-    jne notEnough
-    cmp bx, ax
-    ja noMoreSubtractions
-
-notEnough:
-    sub ax, bx
-    sbb dx, 0
-    inc cx
-    jmp divideLoop
-
-noMoreSubtractions:
-    mov dx, ax
-    mov ax, cx
-
-    xor cx, cx
-    mov cl, [isNegative]
-    cmp cl, 1d
-    jne notNegative
-    neg ax
-    neg dx
-
-notNegative:
-    pop cx
-    ret
-
-divide32 ENDP
-
-
 outputAverage PROC              ; Знаходимо і виводимо середнє арефметичене
     push ax
     xor ax, ax
@@ -371,7 +312,6 @@ outputAverage PROC              ; Знаходимо і виводимо сер�
 averageLoop:                    ; Сумуємо усі числа, результат у dx:ax
     mov ax, [numbersArray + si]
     cwd                         ; Розширюємо знак
-
     add ax, sumResult
     adc dx, sumRemainder        ; Додаємо перенос
 
@@ -385,7 +325,7 @@ averageLoop:                    ; Сумуємо усі числа, резуль
     mov dx, sumRemainder
     mov bx, numElements
 
-    call divide32               ; Знаходимо середнє арефметичне, (ax - частка, dx - остача)
+    idiv bx                 ; Знаходимо середнє арефметичне, (ax - частка, dx - остача)         
 
     mov [sumResult], ax
     call outputNumber
@@ -521,12 +461,12 @@ sortArray PROC                  ; Сортуємо масив
 fori:
     forj:
     mov bx, ax
-    call multiplyByTwo
+    shl bx, 1
     mov si, bx
     mov dx, [numbersArray + si]    ;array[i]
 
     mov bx, cx
-    call multiplyByTwo
+    shl bx, 1
     mov si, bx
     mov bx, [numbersArray + si]    ;array[j]
 
@@ -537,13 +477,13 @@ fori:
 swap:
     mov [temporaryValue], bx
     mov bx, cx
-    call multiplyByTwo
+    shl bx, 1
     mov si, bx
     mov [numbersArray + si], dx
 
     mov dx, [temporaryValue]
     mov bx, ax
-    call multiplyByTwo
+    shl bx, 1
     mov si, bx
     mov [numbersArray + si], dx
 
@@ -558,8 +498,6 @@ dontSwap:
     mov bx, numElements
     cmp bx, ax
     jne fori
-
-    call outputNewLine
     
     pop dx
     pop cx
@@ -568,15 +506,138 @@ dontSwap:
     ret
 sortArray ENDP
 
+processQuickSort PROC
+    pop di                      ; di - значення для повертання
+    pop ax                      ; ax - початковий індекс
+    push di
+
+    cmp ax, bx                  ; перевірка на те, що у масиві хоча б 2 елемети
+    jge smallArray
+
+    shl bx, 1
+    mov cx, [numbersArray + bx] ; cx - pivot (опорний елемент (останій))
+    shr bx, 1
+
+    mov si, ax
+    dec si                      ; індекс розбиття
+
+    mov dx, ax
+for:
+    xchg dx, bx
+
+    shl bx, 1
+    mov di, [numbersArray + bx]  ; di = numElements[dx(bx)]
+    shr bx, 1
+    xchg dx, bx
+
+    cmp cx, di                  ; Якщо елемент array[dx(bx)] менший або рівний опорному (cx)
+    jl endIfa
+
+    inc si                      ; Збільшуємо індекс розбиття
+
+    xchg dx, bx
+
+    push ax
+    push dx
+
+    shl si, 1
+    shl bx, 1
+
+    mov ax, [numbersArray + si] ; ax = array[si]
+    mov dx, [numbersArray + bx] ; dx(bx) = array[bx(dx)]
+    mov [numbersArray + si], dx
+    mov [numbersArray + bx], ax
+        
+    shr si, 1
+    shr bx, 1
+
+    pop dx
+    pop ax
+
+    xchg dx, bx
+
+endIfa:
+    inc dx
+    cmp dx, bx
+    jl for
+
+smallArray:                     ; Після проходу циклу – опорний елемент потрібно поставити на місце розбиття
+    mov dx, si
+    inc si                      ; Нова позиція опорного елемента – p = si + 1.
+
+    push ax
+    push dx
+
+    shl si, 1
+    shl bx, 1
+
+    mov ax, [numbersArray + si] ; ax = array[p]
+    mov dx, [numbersArray + bx] ; dx = array[bx (верхня межа)] (опорний елемент)
+    mov [numbersArray + si], dx
+    mov [numbersArray + bx], ax
+
+    shr si, 1
+    shr bx, 1
+
+    pop dx
+    pop ax
+
+
+    ret
+processQuickSort ENDP
+
+;Повертає посортований масив
+quickSort PROC
+    xor ax, ax
+    xor bx, bx
+    xor cx, cx
+    xor dx, dx
+    xor si, si
+
+    mov ax, 0ffffh              ; Значення при якому завершуємо програму
+    push ax
+    mov ax, 0h                  ; Початковий індекс
+    push ax
+    mov ax, [numElements]         ; останній індекс
+    dec ax
+    push ax
+
+sortLoop:
+    pop bx                      ; bx - останній індекс або кінець сотрування
+    cmp bx, 0ffffh                  ; перевіряємо чи є ще непосортовані елементи у масиві
+    jne continueSort        
+    ret                         ; якщо посортовано - закінчуємо
+
+continueSort:
+    call processQuickSort
+
+    dec si
+    cmp ax, si
+    jge leftNull
+    push ax
+    push si
+
+leftNull:
+    add si, 2d
+    cmp si, bx
+    jge rightNull
+    push si
+    push bx
+
+rightNull:
+    jmp sortLoop
+quickSort ENDP
+
 main PROC               ; Головна програма, запускаємо усі процедури
     mov ax, @Data
     mov ds, ax
 
     call readFile
-    call outputArray
+    ;call outputArray
 
-    call sortArray
-    call outputArray
+    ;call quickSort
+    call sortArray      ; buble sort faster then quick)
+    ;call outputArray
 
     call outputMedian
     call outputAverage
