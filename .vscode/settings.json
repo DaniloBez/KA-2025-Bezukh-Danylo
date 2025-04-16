@@ -9,17 +9,17 @@
                 "set PATH=C:\\TASM"
             ],
             "run": [
-                "CD Project",
+                "CD labs/lab09",
                 "TASM ${file}",
                 "TLINK ${filename}",
-                ">${filename} < test.in"
+                ">${filename}"
             ],
             "debug": [
-                "CD Project",
+                "CD labs/lab09",
                 "TASM /zi ${file}",
                 "TLINK /v/3 ${filename}.obj",
                 "copy C:\\TASM\\TDC2.TD TDCONFIG.TD",
-                "TD -cTDCONFIG.TD ${filename}.exe < test.in"
+                "TD -cTDCONFIG.TD ${filename}.exe"
             ]
         },
         "MASM-v6.11": {
